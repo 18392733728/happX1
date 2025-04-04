@@ -1,0 +1,9 @@
+server:
+  port: ":8080"
+
+database:
+  host: "localhost"
+  port: "5432"
+  user: "postgres"
+  password: ""  # 在实际使用时请修改
+  dbname: "happx1" 
