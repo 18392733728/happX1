@@ -1,9 +1,28 @@
 server:
-  port: ":8080"
+  port: 8080
+  mode: debug  # debug or release
 
 database:
   host: "localhost"
   port: "5432"
   user: "postgres"
   password: ""  # 在实际使用时请修改
-  dbname: "happx1" 
+  dbname: "happx1"
+
+mysql:
+  host: localhost
+  port: 3306
+  username: root
+  password: root
+  database: happx1
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 100
+  min_idle_conns: 10 
