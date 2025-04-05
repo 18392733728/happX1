@@ -12,20 +12,29 @@ import (
 	"happx1/internal/model"
 )
 
+// MySQLConfig MySQL配置结构体
+type MySQLConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+}
+
 // DB 数据库连接
 type DB struct {
 	*gorm.DB
 }
 
 // InitDB 初始化数据库连接
-func InitDB() (*DB, error) {
+func InitDB(config *MySQLConfig) (*DB, error) {
 	// 配置数据库连接
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
+		config.User,
+		config.Password,
+		config.Host,
+		config.Port,
+		config.DBName,
 	)
 
 	// 配置GORM日志

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"happx1/internal/config"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,7 @@ import (
 
 func main() {
 	// 初始化数据库连接
-	db, err := database.InitDB()
+	db, err := database.InitDB(&config.GlobalConfig.MySQL)
 	if err != nil {
 		log.Fatalf("初始化数据库失败: %v", err)
 	}
