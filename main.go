@@ -6,6 +6,7 @@ import (
 
 	"happx1/internal/config"
 	"happx1/internal/database"
+	"happx1/internal/scheduler"
 	"happx1/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -27,15 +28,25 @@ func main() {
 		log.Fatalf("初始化Redis失败: %v", err)
 	}
 
+	// 初始化调度器
+	scheduler := scheduler.NewScheduler()
+	if err := scheduler.Start(); err != nil {
+		log.Fatalf("启动调度器失败: %v", err)
+	}
+	defer scheduler.Stop()
+
 	// 设置gin模式
 	gin.SetMode(config.GlobalConfig.Server.Mode)
 
 	// 创建默认的gin引擎
 	r := gin.Default()
 
+	// 创建服务层
+	taskService := service.NewTaskService(scheduler, database.DB)
+
 	// 创建并注册处理器
-	handler := service.NewHandler()
-	handler.RegisterRoutes(r)
+	taskHandler := service.NewTaskHandler(taskService)
+	taskHandler.RegisterRoutes(r)
 
 	// 启动服务器
 	addr := fmt.Sprintf(":%d", config.GlobalConfig.Server.Port)
