@@ -6,11 +6,20 @@ import (
 	"gorm.io/gorm"
 )
 
+// TaskType 任务类型
+type TaskType int
+
+const (
+	TaskTypeOnce TaskType = iota + 1 // 一次性任务
+	TaskTypeCron                     // 循环任务
+)
+
 // Task 定时任务模型
 type Task struct {
 	gorm.Model
 	Name        string    `gorm:"type:varchar(100);not null;unique" json:"name"`  // 任务名称
-	Spec        string    `gorm:"type:varchar(100);not null" json:"spec"`         // cron 表达式
+	Type        TaskType  `gorm:"type:tinyint;not null;default:1" json:"type"`    // 任务类型：1-一次性任务，2-循环任务
+	Spec        string    `gorm:"type:varchar(100);not null" json:"spec"`         // cron 表达式或执行时间
 	Command     string    `gorm:"type:text;not null" json:"command"`              // 执行的命令
 	Status      int       `gorm:"type:tinyint;not null;default:1" json:"status"`  // 状态：1-启用，0-禁用
 	LastRunTime time.Time `json:"last_run_time"`                                  // 上次运行时间

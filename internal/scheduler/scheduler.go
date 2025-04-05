@@ -73,15 +73,42 @@ func (s *Scheduler) AddTask(task *model.Task) error {
 		return err
 	}
 
-	// 添加到调度器
-	_, err := s.cron.AddFunc(task.Spec, func() {
+	// 根据任务类型添加到调度器
+	switch task.Type {
+	case model.TaskTypeOnce:
+		// 解析执行时间
+		execTime, err := time.Parse(time.RFC3339, task.Spec)
+		if err != nil {
+			return fmt.Errorf("解析执行时间失败: %v", err)
+		}
+
+		// 计算延迟时间
+		delay := execTime.Sub(time.Now())
+		if delay < 0 {
+			return fmt.Errorf("执行时间已过期")
+		}
+
+		// 启动一次性任务
 		go func() {
-			defer utils.Recover(fmt.Sprintf("Task-%d", task.ID), context.Background())
+			defer utils.Recover(fmt.Sprintf("OnceTask-%d", task.ID), context.Background())
+			time.Sleep(delay)
 			s.ExecuteTask(task)
 		}()
-	})
-	if err != nil {
-		return err
+
+	case model.TaskTypeCron:
+		// 添加到 cron 调度器
+		_, err := s.cron.AddFunc(task.Spec, func() {
+			go func() {
+				defer utils.Recover(fmt.Sprintf("CronTask-%d", task.ID), context.Background())
+				s.ExecuteTask(task)
+			}()
+		})
+		if err != nil {
+			return err
+		}
+
+	default:
+		return fmt.Errorf("不支持的任务类型: %d", task.Type)
 	}
 
 	return nil
@@ -122,7 +149,13 @@ func (s *Scheduler) ExecuteTask(task *model.Task) {
 
 	// 更新任务状态
 	task.LastRunTime = taskLog.StartTime
-	task.NextRunTime = s.cron.Entry(cron.EntryID(task.ID)).Next
+	if task.Type == model.TaskTypeOnce {
+		// 一次性任务执行完成后禁用
+		task.Status = 0
+	} else {
+		// 循环任务更新下次执行时间
+		task.NextRunTime = s.cron.Entry(cron.EntryID(task.ID)).Next
+	}
 	if err := s.db.Save(task).Error; err != nil {
 		log.Printf("更新任务状态失败: %v", err)
 	}
